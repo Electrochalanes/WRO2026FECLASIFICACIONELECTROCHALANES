@@ -19,51 +19,53 @@ _This part must be filled by participants with the technical clarifications abou
 
 ## Components used
 
-* "Hiwonder WonderCam V2.0": Es un módulo de visión artificial basado en el SoC Kendryte K210, capaz de ejecutar inferencia en el borde sin conectividad externa. Integra un sensor CMOS de 2 MP, pantalla LCD, iluminación auxiliar e interfaz I2C, y soporta funciones como detección de color, reconocimiento facial, clasificación de objetos y lectura de códigos QR, además de entrenamiento simplificado de modelos. Está orientada a aplicaciones de robótica y sistemas embebidos de baja potencia con integración directa en plataformas como Arduino y micro:bit con un rango de operación de 5V y un consumo de corriente de trabajo de 300mA.
+* "Hiwonder WonderCam V2.0": A machine vision module based on the Kendryte K210 SoC, capable of running edge inference without external connectivity. It integrates a 2 MP CMOS sensor, LCD display, auxiliary lighting, and an I2C interface. It supports functions such as color detection, facial recognition, object classification, and QR code reading, as well as simplified model training. It is intended for robotics and low-power embedded systems, with direct integration into platforms such as Arduino and micro:bit, operating at 5V with a working current of 300 mA.
   
-* "DF ROBOT URM37 V5.0": Es un módulo de medición de distancia basado en ultrasonido que integra compensación térmica para mejorar la precisión en entornos variables, con un rango extendido de 2 a 800 cm y resolución de 1 cm. Opera en un rango de 3.3–5.5 V con bajo consumo (<20 mA) y ofrece múltiples interfaces de salida: analógica, PWM, switch y comunicación serial TTL/RS232..
+* "DF ROBOT URM37 V5.0": An ultrasonic distance measurement module with built-in temperature compensation to improve accuracy in variable environments. It has an extended range of 2 to 800 cm and 1 cm resolution. It operates between 3.3–5.5 V with low power consumption (<20 mA) and provides multiple output interfaces: analog, PWM, switch, and TTL/RS232 serial communication.
 
-* "Arduino UNO Q": Es una SBC centrada en el MCU STM32U585 (Arm Cortex-M33 a 160 MHz), encargado del control en tiempo real, adquisición de datos y gestión de periféricos con soporte para bajo consumo y capacidades de seguridad (TrustZone). Este se complementa con un MPU Qualcomm Dragonwing QRB2210 para tareas de alto nivel, permitiendo la coexistencia de procesamiento determinista y ejecución de aplicaciones complejas. La plataforma integra 2 GB de RAM LPDDR4, 16 GB eMMC, conectividad Wi-Fi/Bluetooth y múltiples interfaces (UART, I²C, SPI, CAN, USB).
+* "Arduino UNO Q": A single-board computer centered on the STM32U585 MCU (Arm Cortex-M33 at 160 MHz), responsible for real-time control, data acquisition, and peripheral management, with low-power support. It is complemented by a Qualcomm Dragonwing QRB2210 MPU for high-level tasks, enabling coexistence of deterministic processing and complex application execution. The platform includes 2 GB LPDDR4 RAM, 16 GB eMMC storage, Wi-Fi/Bluetooth connectivity, and multiple interfaces (UART, I²C, SPI, CAN, USB).
 
-* "Servomotor Digital TD-8125": Es un actuador de posición de alto par basado en control PWM, que integra un motor DC, tren de engranajes metálicos y lazo de realimentación interno para posicionamiento preciso. Opera típicamente en el rango de 3.7–7.2 V, con rotación de ~180° y torque nominal cercano a 20–22 kg·cm.
+* "Digital Servomotor TD-8125": A high-torque position actuator based on PWM control, integrating a DC motor, metal gear train, and internal feedback loop for precise positioning. It typically operates between 3.7–7.2 V, with ~180° rotation and a nominal torque of approximately 20–22 kg·cm.
 
-* "50:1 Micro Metal Gearmotor HPCB 6V": Es un motor DC con escobillas integrado con una caja reductora metálica de relación ≈51:1, diseñado para aplicaciones de robótica compacta y actuadores de precisión. Opera a 6 V con velocidad sin carga de ~650 rpm y consumo típico de 100 mA, alcanzando corrientes de hasta ~1.5 A y un par de bloqueo cercano a 0.74 kg·cm.
+* "50:1 Micro Metal Gearmotor HPCB 6V": A brushed DC motor integrated with a metal gearbox with a ratio of approximately 51:1, designed for compact robotics and precision actuators. It operates at 6 V with a no-load speed of ~650 rpm and a typical current of 100 mA, reaching up to ~1.5 A and a stall torque of approximately 0.74 kg·cm.
 
-* "TB6612FNG Dual Motor Driver Carrier": Es un driver dual para motores DC basado en el circuito integrado TB6612FNG, diseñado para el control bidireccional de hasta dos motores de escobillas mediante señales PWM de hasta ~100 kHz. Opera en un rango de 4.5–13.5 V, con una corriente continua de hasta 1 A por canal (picos mayores), e incorpora lógica de control independiente para cada motor, permitiendo regulación de velocidad y sentido de giro.
+* "TB6612FNG Dual Motor Driver Carrier": A dual DC motor driver based on the TB6612FNG integrated circuit, designed for bidirectional control of up to two brushed motors using PWM signals up to ~100 kHz. It operates between 4.5–13.5 V, with a continuous current of up to 1 A per channel (higher peaks), and includes independent control logic for each motor, enabling speed and direction regulation.
 
-* Cables, Jumpers, Alambre
+* Wires, jumpers, and cable
 
-* Tornillería M3 y M5 y baleros M5 por dentro y M16 por fuera.
+* M3 and M5 screws, and bearings (M5 inner, M16 outer)
 
-* PLA, TPU, acrílico.
+* PLA, TPU, acrylic
 
-* Alimentación: Powerbank de 5v y 3A para el Arduino, bater´´ia LiPO de 7.4V y 400mAh
+* Power supply: 5V 3A power bank for the Arduino, and a 7.4V 400 mAh LiPo battery.
 
-## Criterio 1: Movilidad y Diseño Mecánico.
+## Mobility and Mechanical Design
 
-* Torque y Velocidad: Torque y velocidad:
-Para el vehículo autónomo, se seleccionó el motor DC 50:1 (torque de bloqueo 0.74 kg·cm, 650 rpm) por su equilibrio óptimo entre maniobrabilidad y capacidad de superar obstáculos se eligió para precisión en dirección o guiado, priorizando respuesta sobre consumo energético.
+* Torque and Speed:
+For the autonomous vehicle, the 50:1 DC motor (0.74 kg·cm stall torque, 650 rpm) was selected due to its optimal balance between maneuverability and obstacle-handling capability. It was chosen for steering precision and responsiveness, prioritizing control over energy consumption.
+Design-related selections:
 
-* Selecciones relacionadas al diseño: Torque y velocidad:
-Rigidez vs. peso: Uso de PLA para piezas resistentes, TPU para absorción de impactos y maleabilidad para las llantas y acrílico para una base de calidad. Tornillería M3/M5 y baleros M5/M16 garantizan robustez sin exceso de peso.
+* Design-related selections:
+ Rigidity vs. weight: PLA is used for structural strength, TPU for impact absorption and flexibility in tires, and acrylic for a high-quality base. M3/M5 screws and M5/M16 bearings ensure robustness without excessive weight.
 
-* ¿Por qué estos componentes?:
-  WonderCam V2.0: Inferencia en el borde para decisiones autónomas en tiempo real, cumpliendo reglas WRO sin conexión externa.
-  URM37 V5.0: Rango 2–800 cm, resolución 1 cm y compensación térmica, ideal para detección de paredes/obstáculos en entornos cambiantes.
-  Arduino UNO Q: Combina bajo consumo (STM32U585) y potencia de aplicación para la robótica.
-  TB6612FNG: Menor caída de tensión que L298N, eficiente y compatible con lógica 5V, maneja 1 A continuo por canal (picos 3.2 A) suficiente para el motor.
-  Materiales (PLA, TPU, acrílico): Ligereza, resistencia e iteración rápida; el acrílico permite inspección visual en verificaciones técnicas.
+* Why these components?
+-WonderCam V2.0: Edge inference enables real-time autonomous decisions, complying with WRO rules without external connectivity.
+-URM37 V5.0: 2–800 cm range, 1 cm resolution, and thermal compensation, ideal for wall/obstacle detection in changing environments.
+-Arduino UNO Q: Combines low power consumption (STM32U585) with high application capability for robotics.
+-TB6612FNG: Lower voltage drop than L298N, efficient and compatible with 5V logic, supports 1 A continuous per channel (up to 3.2 A peak), sufficient for the motor.
+-Materials (PLA, TPU, acrylic): Lightweight, durable, and allow rapid iteration; acrylic enables visual inspection during technical checks.
 
-* Explicación del diseño: El diseño está inspirado en el robot que utilizamos para el nacional del 2025, cambiamos muchos componentes, pero específicamente hablando del diseño, se mantuvo una estructura similar pero con cambios importantes en partes como el sistema direccional, se implementó un sistema de dirección Ackerman para garantizar que las ruedas delanteras describan arcos de giro con diferentes radios, evitando el deslizamiento lateral y reduciendo la fricción en curvas. Esto mejora la precisión de trayectoria y el desgaste de neumáticos, esencial en un circuito cerrado con curvas cerradas. Las llantas fueron diseñadas en 3D impresas en PLA para la estructura principal y TPU para las gomas, esto fue seleccionado así con el fin de obtener llantas que se adaptaran al diseño que teníamos en mente, permitiéndonos utilizar diferentes arreglos en la parte trasera y delantera del vehículo y fabricar llanta más grande para evitar roses con el suelo de la pista. Decidimos hace un robot compacto con el fin de obtener una mayor maniobrabilidad al momento de realizar maniobras de giro o esquivamiento, la cámara se colocó en una posición alta para permitirle tener una vista más centrada a la pista y a los obstáculos en general, eliminando así interferencias ambientales del entorno externo a la pista. Las capas y pisos fueron diseñado de forma que acceder a los componentes cruciales como el motor y el cerebro del automóvil fueran de fácil acceso o de fácil desarmado y armado para eliminar tiempo crucial en posibles ajustes o reparaciones. El sistema de tracción trasera con tornillo sin fin y reducción en dos etapas maximiza el torque disponible, asegura el frenado automático y simplifica el control, todo ello integrado con una dirección Ackerman delantera que no interfiere con el empuje.
+* Design explanation:
+The design is inspired by the robot used in the 2025 national competition. While many components were changed, the general structure was maintained with significant improvements, particularly in the steering system. An Ackermann steering system was implemented to ensure that the front wheels follow turning arcs with different radii, preventing lateral slipping and reducing friction in curves. This improves trajectory accuracy and tire wear, essential in a closed circuit with tight turns.
 
-## Criterio 2: Arquitectura de potencia y sensores: 
+## Power and Sensor Architecture
 
-Se utilizan dos fuentes independientes para aislar la parte ruidosa del motor de tracción de la lógica sensible del Arduino, sensores, cámara y servomotor. La alimentación de la lógica proviene de una powerbank de 5V con capacidad de 3A. Esta powerbank alimenta directamente el Arduino UNO Q, que a su vez distribuye la corriente a la WonderCam V2.0 (300 mA), a los tres sensores ultrasónicos URM37 (60 mA en total), al servomotor TD-8125 (1.5 A en pico) y a la etapa lógica del driver TB6612FNG (menos de 10 mA). Sumando los consumos máximos teóricos se obtienen aproximadamente 3.07 A, una cifra ligeramente superior a los 3A disponibles. Sin embargo, en la práctica los picos del servomotor y del Arduino no ocurren simultáneamente.
+Two independent power sources are used to isolate the noisy traction motor from the sensitive logic components (Arduino, sensors, camera, and servo motor).
 
-Para la tracción se emplea una batería LiPo de 7.4V y 400 mAh exclusiva para el motor DC de tracción. El motor único 50:1 consume hasta 1.5 A en pico, y las pérdidas en la etapa de potencia del TB6612FNG suman unos 0.1 A, totalizando 1.6 A pico. La autonomía estimada es de 15 minutos (0.4 Ah / 1.6 A), más que suficiente para rondas de menos de 3 minutos. 
+The logic is powered by a 5V, 3A power bank. This directly supplies the Arduino UNO Q, which distributes power to the WonderCam V2.0 (300 mA), three URM37 ultrasonic sensors (60 mA total), the TD-8125 servo motor (1.5 A peak), and the TB6612FNG logic stage (less than 10 mA). The theoretical maximum consumption is approximately 3.07 A, slightly above the available 3A; however, in practice, servo and Arduino peaks do not occur simultaneously.
 
-Se colocan tres sensores ultrasónicos URM37: uno frontal central para detectar muros u obstáculos delante del vehículo, y dos laterales (izquierdo y derecho) para medir la distancia a los muros laterales. Estos valores laterales alimentan un control PID que actúa sobre el sistema de dirección Ackerman, ajustando el ángulo de las ruedas delanteras para mantener el vehículo centrado en el carril. Los sensores laterales se montan a 10 cm del suelo, operando en su rango óptimo de 10 a 50 cm, adecuado para pasillos de 60-80 cm de ancho. La cámara WonderCam V2.0 se ubica en la parte superior del vehículo, orientada en diagonal hacia abajo unos 30 grados respecto a la horizontal. Esta posición permite ver el suelo delante del robot para detectar colores de obstáculos (rojo, verde) y evita sombras proyectadas por la propia estructura. La vista diagonal, combinada con el ultrasonido frontal, cubre tanto el corto alcance (visión) como el largo alcance (sonar).
+For traction, a 7.4V 400 mAh LiPo battery is used exclusively for the DC motor. The 50:1 motor consumes up to 1.5 A peak, and the TB6612FNG adds about 0.1 A, totaling 1.6 A peak. Estimated autonomy is 15 minutes (0.4 Ah / 1.6 A), more than sufficient for runs under 3 minutes.
 
-Los métodos de calibración incluyen, para los sensores ultrasónicos, la compensación térmica de fábrica del URM37 y una calibración en campo midiendo distancias reales de 10, 50 y 100 cm para ajustar un factor lineal por sensor. Para la cámara se utiliza el balance de blancos automático del K210 y se calibran los colores capturando muestras de obstáculos oficiales bajo la iluminación del campo para generar umbrales HSV almacenados en flash.
-Se han considerado problemas de ruido e interferencias. El ruido eléctrico generado por el motor DC y el servomotor se mitiga con alimentaciones separadas (batería 7.4V solo para el motor, powerbank 5V para la lógica). Para la cámara, se activa el LED auxiliar de la WonderCam en condiciones de poca luz.
+Three URM37 ultrasonic sensors are installed: one front-facing sensor to detect walls or obstacles, and two lateral sensors (left and right) to measure distance to side walls. These lateral values feed a PID controller that adjusts the Ackermann steering system to keep the vehicle centered.
+
 
