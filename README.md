@@ -18,7 +18,7 @@ Engineering materials
 | `t-photos` | 2 team photos (official + fun) |
 | `v-photos` | 6 vehicle photos (all sides, top and bottom) |
 | `video` | `video.md` with links to autonomous driving demonstrations |
-| `schemes` | Wiring and electromechanical diagrams (PNG/PDF) |
+| `schemes` | Wiring and electromechanical diagrams  |
 | `src` | Complete control software for all programmed components |
 | `models` | 3D-printable STL files for custom vehicle parts |
 
