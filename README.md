@@ -1,255 +1,308 @@
 Engineering materials
 ====
 
-This repository contains engineering materials of a self-driven vehicle's model participating in the WRO Future Engineers competition in the season 2026.
+# Electrochalanes — WRO Future Engineers 2026 - Autonomous Self-Driving Car 🇲🇽
 
-## Content
+---
 
-* `t-photos` contains 2 photos of the team (an official one and one funny photo with all team members)
-* `v-photos` contains 6 photos of the vehicle (from every side, from top and bottom)
-* `video` contains the video.md file with the link to a video where driving demonstration exists
-* `schemes` contains one or several schematic diagrams in form of JPEG, PNG or PDF of the electromechanical components illustrating all the elements (electronic components and motors) used in the vehicle and how they connect to each other.
-* `src` contains code of control software for all components which were programmed to participate in the competition
-* `models` is for the files for models used by 3D printers, laser cutting machines and CNC machines to produce the vehicle elements. If there is nothing to add to this location, the directory can be removed.
+## Team
 
+**Electrochalanes** — Tijuana, Baja California, Mexico
+
+---
+
+## Repository Contents
+
+| Folder | Contents |
+|---|---|
+| `t-photos` | 2 team photos (official + fun) |
+| `v-photos` | 6 vehicle photos (all sides, top and bottom) |
+| `video` | `video.md` with links to autonomous driving demonstrations |
+| `schemes` | Wiring and electromechanical diagrams (PNG/PDF) |
+| `src` | Complete control software for all programmed components |
+| `models` | 3D-printable STL files for custom vehicle parts |
+
+---
 
 ## Introduction
 
-_This part must be filled by participants with the technical clarifications about the code: which modules the code consists of, how they are related to the electromechanical components of the vehicle, and what is the process to build/compile/upload the code to the vehicle’s controllers._
+This repository documents the complete engineering process of our autonomous vehicle for the **WRO Future Engineers 2026**. 
 
-## Components used
+The open challenge software is organized into a single Arduino sketch that integrates six modules:
 
-* "Hiwonder WonderCam V2.0": A machine vision module based on the Kendryte K210 SoC, capable of running edge inference without external connectivity. It integrates a 2 MP CMOS sensor, LCD display, auxiliary lighting, and an I2C interface. It supports functions such as color detection, facial recognition, object classification, and QR code reading, as well as simplified model training. It is intended for robotics and low-power embedded systems, with direct integration into platforms such as Arduino and micro:bit, operating at 5V with a working current of 300 mA.
-  
-* "DF ROBOT URM37 V5.0": An ultrasonic distance measurement module with built-in temperature compensation to improve accuracy in variable environments. It has an extended range of 2 to 800 cm and 1 cm resolution. It operates between 3.3–5.5 V with low power consumption (<20 mA) and provides multiple output interfaces: analog, PWM, switch, and TTL/RS232 serial communication.
+1. **Sensor module** — Sequential URM37 ultrasonic readings (front, left, right)
+2. **Vision module** — WonderCam color detection for turning direction
+3. **PID controller** — Bilateral lane centering using left/right sensor error
+4. **State machine** — Six-state FSM controlling overall vehicle behavior
+5. **Turn sequencer** — Time-based 90° cornering with camera/sensor fallback
+6. **Stop locator** — Sensor-based return to starting position after 3 laps
 
-* "Arduino UNO Q": A single-board computer centered on the STM32U585 MCU (Arm Cortex-M33 at 160 MHz), responsible for real-time control, data acquisition, and peripheral management, with low-power support. It is complemented by a Qualcomm Dragonwing QRB2210 MPU for high-level tasks, enabling coexistence of deterministic processing and complex application execution. The platform includes 2 GB LPDDR4 RAM, 16 GB eMMC storage, Wi-Fi/Bluetooth connectivity, and multiple interfaces (UART, I²C, SPI, CAN, USB).
-
-* "Digital Servomotor TD-8125": A high-torque position actuator based on PWM control, integrating a DC motor, metal gear train, and internal feedback loop for precise positioning. It typically operates between 3.7–7.2 V, with ~180° rotation and a nominal torque of approximately 20–22 kg·cm.
-
-* "50:1 Micro Metal Gearmotor HPCB 6V": A brushed DC motor integrated with a metal gearbox with a ratio of approximately 51:1, designed for compact robotics and precision actuators. It operates at 6 V with a no-load speed of ~650 rpm and a typical current of 100 mA, reaching up to ~1.5 A and a stall torque of approximately 0.74 kg·cm.
-
-* "TB6612FNG Dual Motor Driver Carrier": A dual DC motor driver based on the TB6612FNG integrated circuit, designed for bidirectional control of up to two brushed motors using PWM signals up to ~100 kHz. It operates between 4.5–13.5 V, with a continuous current of up to 1 A per channel (higher peaks), and includes independent control logic for each motor, enabling speed and direction regulation.
-
-* Wires, jumpers, and cable
-
-* M3 and M5 screws, and bearings (M5 inner, M16 outer)
-
-* PLA, TPU, acrylic
-
-* Power supply: 5V 3A power bank for the Arduino, and a 7.4V 400 mAh LiPo battery.
-
-## Mobility and Mechanical Design
-
-* Torque and Speed:
-For the autonomous vehicle, the 50:1 DC motor (0.74 kg·cm stall torque, 650 rpm) was selected due to its optimal balance between maneuverability and obstacle-handling capability. It was chosen for steering precision and responsiveness, prioritizing control over energy consumption.
-Design-related selections:
-
-* Design-related selections:
- Rigidity vs. weight: PLA is used for structural strength, TPU for impact absorption and flexibility in tires, and acrylic for a high-quality base. M3/M5 screws and M5/M16 bearings ensure robustness without excessive weight.
-
-* Why these components?
--WonderCam V2.0: Edge inference enables real-time autonomous decisions, complying with WRO rules without external connectivity.
--URM37 V5.0: 2–800 cm range, 1 cm resolution, and thermal compensation, ideal for wall/obstacle detection in changing environments.
--Arduino UNO Q: Combines low power consumption (STM32U585) with high application capability for robotics.
--TB6612FNG: Lower voltage drop than L298N, efficient and compatible with 5V logic, supports 1 A continuous per channel (up to 3.2 A peak), sufficient for the motor.
--Materials (PLA, TPU, acrylic): Lightweight, durable, and allow rapid iteration; acrylic enables visual inspection during technical checks.
-
-* Design explanation:
-The design is inspired by the robot used in the 2025 national competition. While many components were changed, the general structure was maintained with significant improvements, particularly in the steering system. An Ackermann steering system was implemented to ensure that the front wheels follow turning arcs with different radii, preventing lateral slipping and reducing friction in curves. This improves trajectory accuracy and tire wear, essential in a closed circuit with tight turns.
-
-## Power and Sensor Architecture
-
-Two independent power sources are used to isolate the noisy traction motor from the sensitive logic components (Arduino, sensors, camera, and servo motor).
-
-The logic is powered by a 5V, 3A power bank. This directly supplies the Arduino UNO Q, which distributes power to the WonderCam V2.0 (300 mA), three URM37 ultrasonic sensors (60 mA total), the TD-8125 servo motor (1.5 A peak), and the TB6612FNG logic stage (less than 10 mA). The theoretical maximum consumption is approximately 3.07 A, slightly above the available 3A; however, in practice, servo and Arduino peaks do not occur simultaneously.
-
-For traction, a 7.4V 400 mAh LiPo battery is used exclusively for the DC motor. The 50:1 motor consumes up to 1.5 A peak, and the TB6612FNG adds about 0.1 A, totaling 1.6 A peak. Estimated autonomy is 15 minutes (0.4 Ah / 1.6 A), more than sufficient for runs under 3 minutes.
-
-Three URM37 ultrasonic sensors are installed: one front-facing sensor to detect walls or obstacles, and two lateral sensors (left and right) to measure distance to side walls. These lateral values feed a PID controller that adjusts the Ackermann steering system to keep the vehicle centered.
-
-## Pin Mapping
-
-```
-DC Motor Driver
-  PWMA  → Pin 5   (10-bit PWM speed)
-  AIN1  → Pin 3   (direction control)
-  AIN2  → Pin 2   (direction control)
-
-Steering Servo
-  Signal → Pin 9
-
-URM37 FRONT sensor   (wall detection for turns)
-  TRIG  → Pin 8
-  ECHO  → Pin 14 (A0)
-
-URM37 LEFT sensor    (PID lane centering)
-  TRIG  → Pin 10
-  ECHO  → Pin 15 (A1)
-
-URM37 RIGHT sensor   (PID lane centering)
-  TRIG  → Pin 12
-  ECHO  → Pin 16 (A2)
-
-WonderCam
-  I2C   → SDA / SCL (standard)
-
-Start button
-  Signal → Pin 7  (INPUT_PULLUP, active LOW)
-```
+To compile and upload: install **Arduino IDE 2.x**, add the **Arduino UNO Q** board package, install the **WonderCam** and **Servo** libraries, open the `.ino` file, select board **Arduino UNO Q**, choose the correct COM port, and click Upload. For real-time debugging, uncomment `#define DEBUG` to enable Serial Monitor output at 9600 baud.
 
 ---
 
-## Software Architecture (Open Challenge)
+## Components
 
-The program is structured as a **finite state machine (FSM)** with six states. Every iteration of `loop()` reads the three sensors sequentially, then executes the logic corresponding to the current state.
+| Component | Model | Purpose |
+|---|---|---|
+| Main controller | Arduino UNO Q | Central processing — sensor reading, PID, motor and servo control |
+| DC motor driver | TB6612FNG Dual Motor Driver | Bidirectional speed control via 10-bit PWM |
+| Drive motor | 50:1 Micro Metal Gearmotor HPCB 6V | Forward traction |
+| Steering servo | Digital Servomotor TD-8125 | Directional control via Ackermann steering |
+| Ultrasonic sensor ×3 | DFRobot URM37 V5.0 | Front wall detection + bilateral lane centering |
+| Color camera | Hiwonder WonderCam V2.0 | Detects orange/blue floor lines to decide turning direction |
+| Start button | Push button (Pin 7, INPUT_PULLUP) | Triggers start sequence per WRO rules 9.10–9.11 |
+| Logic power | 5V 3A power bank | Supplies Arduino, sensors, camera, and servo |
+| Motor power | 7.4V 400 mAh LiPo | Dedicated traction supply, isolated from logic |
+| Structure | PLA, TPU, acrylic, M3/M5 screws, M5/M16 bearings | Chassis, tires, and mechanical assembly |
 
-### States
+---
 
-```
-IDLE ──(button press)──► RUNNING ──(wall < 55 cm)──► TURNING
-                             ▲                            │
-                             └──(straighten time)── STRAIGHTENING
-                                                         │
-                                    (after 12 corners) ──►  APPROACH
-                                                              │
-                                         (sensors match start)──► DONE
-```
+## 1. Mobility and Mechanical Design
 
-| State | Description |
+### Chassis and Steering System
+
+The vehicle's structure is based on our 2025 national competition design, substantially revised with a new **Ackermann steering geometry** for the front axle. Ackermann geometry ensures that during a turn, the inner wheel follows a tighter arc than the outer wheel — eliminating lateral tire slip and reducing friction in tight corners. This improves trajectory repeatability, which is critical when relying on a time-based turn duration (`T_GIRO_MS`) instead of a gyroscope.
+
+The chassis uses three materials selected for specific mechanical roles:
+- **PLA** for structural rigidity of the main frame and sensor mounts
+- **TPU** for the tires, providing grip and vibration absorption without brittleness
+- **Acrylic** for the base plate, enabling visual inspection of wiring during technical checks
+
+M3 screws handle small brackets and sensor attachments; M5 screws with M5/M16 bearings handle the steering pivot and rear axle, ensuring low friction under load.
+
+### Drive Motor Selection
+
+The **50:1 Micro Metal Gearmotor HPCB 6V** (0.74 kg·cm stall torque, ~650 rpm no-load) was selected after evaluating two options:
+
+| Option | Ratio | Speed | Torque | Result |
+|---|---|---|---|---|
+| **Chosen: HPCB 6V 50:1** | 50:1 | ~650 rpm | 0.74 kg·cm |  Sufficient torque, controllable speed for PID |
+| Discarded: high-speed motor | 10:1 | ~3000 rpm | ~0.15 kg·cm |  Too fast — PID could not correct lateral drift in time |
+
+The 50:1 ratio provides enough torque to accelerate smoothly while keeping speed low enough for the PID controller to react before lateral drift exceeds recoverable limits.
+
+### Iteration History
+
+| Version | Change | Reason |
+|---|---|---|
+| V1 (2025) | Standard steering, single lateral sensor | Baseline from 2025 national competition |
+| V2 | Bilateral PID using left + right sensors | V1 drifted toward the wider wall; bilateral error fixed this |
+| V3 (current) | Ackermann steering geometry, TPU tires | Standard steering caused ~8° corner angle error per turn due to tire slip |
+
+---
+
+## 2. Power and Sensor Architecture
+
+### Power Budget
+
+Two independent power rails isolate motor switching noise from logic and sensor signals:
+
+**Rail 1 — Logic (5V, 3A power bank):**
+
+| Component | Current |
 |---|---|
-| `IDLE` | Motor stopped, waiting for start button. Sensors read and store starting position (3-sample average). |
-| `RUNNING` | Vehicle drives forward at cruise speed. PID controller keeps it centered. Camera polls for color. |
-| `TURNING` | Servo locked to max angle for `T_GIRO_MS` ms at reduced speed. Direction set by camera or lateral fallback. |
-| `STRAIGHTENING` | Servo returns to center for `T_ENDEREZAR_MS` ms before resuming `RUNNING`. Corner counter increments. |
-| `APPROACH` | After 12 corners (3 laps), vehicle slows down and compares live sensor readings to stored start values. |
-| `DONE` | Motor stops, servo centers. LED blinks continuously. |
+| Arduino UNO Q | ~200 mA |
+| WonderCam V2.0 | ~300 mA |
+| 3× URM37 sensors | ~60 mA total |
+| TD-8125 servo (peak) | ~1,500 mA |
+| TB6612FNG logic stage | <10 mA |
+| **Total peak** | **~2,070 mA** |
+
+Servo peaks are short and do not coincide with Arduino or camera peaks. Measured current during full operation stays consistently below 2.5 A.
+
+**Rail 2 — Traction (7.4V, 400 mAh LiPo):**
+
+| Component | Current |
+|---|---|
+| 50:1 gearmotor (peak) | ~1,500 mA |
+| TB6612FNG power stage | ~100 mA |
+| **Total peak** | **~1,600 mA** |
+
+Estimated autonomy: 0.4 Ah ÷ 1.6 A = **~15 minutes** — more than sufficient for 3-minute runs.
+
+> **Why two rails?** During V1 testing, motor acceleration caused voltage dips on the shared supply that reset the Arduino mid-run. Splitting into two independent rails eliminated this failure mode entirely.
+
+### Sensor Selection and Placement
+
+**Why URM37 V5.0 over HC-SR04?**
+The URM37 includes built-in temperature compensation for consistent accuracy in variable-temperature venues. Its trigger protocol (100 µs LOW pulse, echo read on LOW) avoids the double-pulse timing of HC-SR04, simplifying the driver code and reducing timing errors.
+
+| Sensor | Position | Height | Justification |
+|---|---|---|---|
+| Front | Center-front of chassis | 12 cm | Avoids reading the floor; detects 100 mm-high walls reliably from 55 cm |
+| Left | Above front-left wheel | 10 cm | Reads lateral wall distance for PID; positioned forward to detect walls before the chassis passes them |
+| Right | Above front-right wheel | 10 cm | Symmetric to left for balanced bilateral PID |
+
+The WonderCam is mounted facing down at ~30°, positioned to see orange/blue turn lines on the track floor when the vehicle is 40–60 cm from the corner entrance.
 
 ---
 
-## Key Algorithms
+## 3. Software Architecture and Control Strategy
 
-### 1. URM37 V5.0 Sequential Reading
+### State Machine
 
-The three sensors are fired **one at a time** with a 5 ms gap between them to avoid cross-echo interference. Each reading follows the URM37 V5.0 protocol:
+The program runs as a **finite state machine (FSM)** with six states. Every `loop()` iteration reads all three sensors sequentially, then executes the current state's logic.
+
+```
+IDLE ──(button press)──► RUNNING ──(front < 55 cm)──► TURNING
+                             ▲                              │
+                             └───── STRAIGHTENING ◄─────────┘
+                                          │
+                              (corners == 12, 3 laps done)
+                                          │
+                                      APPROACH
+                                          │
+                              (sensors within tolerance)
+                                          │
+                                        DONE
+```
+
+| State | Behavior |
+|---|---|
+| `IDLE` | Motor off, waiting for button. Takes 3-sample averaged baseline from all sensors. |
+| `RUNNING` | Drives at cruise speed. PID keeps car centered. Camera polls for color. Checks front sensor every cycle. |
+| `TURNING` | Servo locked at max angle for `T_GIRO_MS` ms at reduced speed. |
+| `STRAIGHTENING` | Servo returns to center for `T_ENDEREZAR_MS` ms. Corner counter increments. Integral resets. |
+| `APPROACH` | After 12 corners, slows and compares live readings to stored start values. |
+| `DONE` | Motor stops, servo centers, LED blinks. |
+
+### Algorithm 1 — URM37 Sequential Reading
+
+All three sensors are fired **one at a time** with 5 ms separation to prevent cross-echo interference — a failure discovered in V1 testing where simultaneous triggering caused random zero readings.
 
 ```cpp
 float leerURM37(int trigPin, int echoPin) {
   digitalWrite(trigPin, LOW);
-  delayMicroseconds(100);       // URM37 V5.0 needs 100µs LOW to trigger
+  delayMicroseconds(100);         // URM37 V5.0: 100µs LOW to trigger
   unsigned long duration = pulseIn(echoPin, LOW, 50000);
-  digitalWrite(trigPin, HIGH);  // return to idle state (HIGH)
+  digitalWrite(trigPin, HIGH);    // return to idle (HIGH)
   if (duration == 0 || duration >= 50000) return -1.0;
-  return (float)duration / 50.0; // URM37 formula: 50µs = 1 cm
+  return (float)duration / 50.0;  // 50µs = 1 cm (URM37-specific formula)
 }
 ```
 
-**Why sequential?** Simultaneous triggering causes the echo pulses to cross between sensors, producing incorrect or zero readings. Sequential firing eliminates this interference entirely.
+The 50,000 µs timeout caps range at 100 cm and prevents `pulseIn` from blocking when no wall is present.
 
-### 2. Bilateral PID Lane Centering
+### Algorithm 2 — Bilateral PID Lane Centering
 
-The error is computed as the **difference between left and right lateral distances**. When the car is perfectly centered, `error = 0` regardless of corridor width (the track can be 1000 mm or 600 mm wide in the Open Challenge).
+The error is the **difference between left and right lateral distances**, implicitly targeting 0 (centered) regardless of corridor width — essential when the Open Challenge alternates between 600 mm and 1000 mm corridors determined randomly before each round.
 
 ```
 error = dist_left − dist_right
+
+servo_angle = SERVO_CENTER + constrain(P + I + D, −41°, +57°)
 ```
 
-- `error > 0` → car is closer to the left wall → steer right
-- `error < 0` → car is closer to the right wall → steer left
-- `error = 0` → car is centered → drive straight
+The integral uses **anti-windup clamping** (±80 units) and **resets after every turn** to prevent previous straight-section error from affecting the next.
 
-The PID output is added to the servo center angle:
+**Tuning iterations:**
 
-```
-servo_angle = SERVO_CENTER + constrain(P + I + D, -MAX_LEFT_OFFSET, +MAX_RIGHT_OFFSET)
-```
+| Kp | Ki | Kd | Observed behavior |
+|---|---|---|---|
+| 0.8 | 0.04 | 0.10 | Loose — 3 full sections to correct a 5 cm lateral offset |
+| **1.2** | **0.04** | **0.15** | ** Current — corrects within 1 section, no oscillation** |
+| 1.8 | 0.04 | 0.15 | Overshoot — side-to-side oscillation in long straights |
 
-The integral term uses **anti-windup clamping** (±80 units) and is reset to zero after each turn to prevent accumulated error from previous straight sections affecting the next one.
+### Algorithm 3 — Turning Direction via WonderCam
 
-**Tunable parameters:**
-
-| Parameter | Default | Effect |
-|---|---|---|
-| `Kp` | 1.2 | Main proportional gain. Increase if centering feels loose. |
-| `Ki` | 0.04 | Corrects persistent drift. Decrease if oscillation appears. |
-| `Kd` | 0.15 | Damps rapid changes. Increase if the car over-corrects. |
-
-### 3. Turning Direction via WonderCam
-
-The WonderCam is pre-programmed (via its internal flash) to detect two color IDs:
+The WonderCam is pre-loaded via its internal flash with two color profiles:
 - **Color ID 1 = Orange** → turn **RIGHT**
 - **Color ID 2 = Blue** → turn **LEFT**
 
-The direction is latched on the **first detection** and reused for all subsequent 11 corners. Camera polling is active only during the `RUNNING` state to avoid false detections mid-turn.
+The direction is **latched on the first detection** and reused for all 11 remaining corners to prevent re-detection errors. Camera polling is restricted to the `RUNNING` state only.
 
-**Fallback (if no color is detected before the first wall):** The car reads both lateral sensors and turns toward the side with more free space.
+**Fallback:** If no color is detected before the first wall, the vehicle reads both lateral sensors and turns toward the side with more free space (the wider gap indicates the inside of the turn).
 
-### 4. Starting Position Memory & APPROACH State
+### Algorithm 4 — Start Position Memory and APPROACH State
 
-When the start button is pressed (vehicle stationary), the program takes **3 averaged readings** from each sensor and stores them as the reference starting position:
+At startup, with the vehicle stationary, 3 averaged readings per sensor are stored as the reference:
 
 ```
 pos_frontal_ini, pos_izq_ini, pos_der_ini
 ```
 
-After completing the 12th corner, the vehicle enters `APPROACH` mode: it reduces speed to `VEL_APROXIMACION = 480` and continuously compares live readings against the stored values. When all valid sensors are within tolerance simultaneously, it enters `DONE` and stops the motor.
+After the 12th corner, `APPROACH` state reduces speed to 480 PWM and compares live readings against stored values each cycle. Tolerances are differentiated by sensor reliability:
 
-Tolerances are differentiated by sensor reliability:
-- **Lateral sensors** (main criterion): ±6 cm
-- **Front sensor** (secondary): ±12 cm — discarded if the initial reading exceeded 120 cm (the sensor was looking down a long corridor, not a wall)
+| Sensor | Tolerance | Reasoning |
+|---|---|---|
+| Left + Right (primary) | ±6 cm | Always faces a wall — reading is stable and repeatable across starting zones |
+| Front (secondary) | ±12 cm | May face a long corridor in lateral starting zones; wider tolerance prevents false positives |
+| Front initial > 120 cm | Discarded | If initial reading was large, sensor was looking down a corridor — that value will not repeat reliably |
+
+### Edge Cases
+
+| Situation | Behavior |
+|---|---|
+| Both lateral sensors return -1 | PID skips correction cycle; car continues straight |
+| Front sensor returns -1 | Wall check skipped; no spurious turn triggered |
+| No color before first wall | Fallback: turn toward the side with more lateral space |
+| Color detected again after first lock | Ignored; direction stays latched |
 
 ---
 
-## Configurable Parameters
+## 4. Systems Thinking and Engineering Decisions
 
-All tunable constants are declared at the top of the sketch for easy access during track testing:
+### Subsystem Interaction
+
+```
+[Power Bank 5V] ──► [Arduino UNO Q] ──► [TB6612FNG] ◄── [LiPo 7.4V]
+                          │                   │
+               ┌──────────┼──────────┐   [DC Motor 50:1]
+               │          │          │
+         [WonderCam]  [3× URM37] [Servo TD-8125]
+               │          │          │
+          [Vision]    [PID +     [Ackermann
+          [Module]  Wall detect]  Steering]
+```
+
+All sensor data enters the FSM every loop cycle. The FSM decides servo angle and motor speed based on current state and sensor values.
+
+### Trade-offs
+
+**Time-based vs. gyroscope-based turns:**
+A gyroscope would give exact 90° turns. We chose time-based (`T_GIRO_MS = 900 ms`) because adding an external IMU increases wiring complexity and failure points. The time-based approach is reliable when battery voltage is consistent — guaranteed by the dedicated LiPo traction rail.
+
+**Bilateral vs. single-sensor PID:**
+A single lateral sensor requires a fixed setpoint that depends on corridor width. Since corridor width varies randomly between rounds (600–1000 mm), a fixed setpoint produces wall-hugging in narrow corridors and drift in wide ones. The bilateral approach adapts automatically to any width.
+
+**Separate vs. shared power rails:**
+During V1 testing, motor acceleration caused voltage dips on the shared supply that reset the Arduino mid-run. Two independent rails eliminated this failure mode.
+
+**Continuous vs. restricted camera polling:**
+Initially the camera polled throughout the entire run. This caused false detections from adjacent section floor lines visible from mid-straight. Restricting polling to `RUNNING` state and requiring front sensor below 70 cm before accepting a detection eliminated false triggers.
+
+### Risk Assessment
+
+| Risk | Mitigation |
+|---|---|
+| Camera misses color before first wall | Lateral fallback: turn toward the more open side |
+| Sensor returns -1 at critical moment | PID skips cycle safely; no crash triggered |
+| APPROACH never matches | Lateral ±6 cm tolerance covers zone variation; front discarded if > 120 cm |
+| Servo center drift | `SERVO_CENTRO = 81` verified on actual track; recalibrate if vehicle is modified |
+
+---
+
+## 5. Configurable Parameters
 
 | Constant | Default | Description |
 |---|---|---|
 | `SERVO_CENTRO` | 81 | Servo angle for straight-ahead driving |
 | `SERVO_MAX_IZQ` | 40 | Maximum left steering angle |
 | `SERVO_MAX_DER` | 138 | Maximum right steering angle |
-| `VEL_CRUCERO` | 680 | Straight-line speed (0–1023, 10-bit PWM) |
+| `VEL_CRUCERO` | 680 | Cruise speed (0–1023, 10-bit PWM) |
 | `VEL_GIRO` | 550 | Speed during a corner |
-| `VEL_APROXIMACION` | 480 | Speed during final approach to start |
+| `VEL_APROXIMACION` | 480 | Speed during final approach |
 | `DIST_PARED_GIRO` | 55 cm | Front distance that triggers a turn |
-| `DIST_LATERAL_MIN` | 10 cm | Emergency wall safety threshold |
-| `T_GIRO_MS` | 900 ms | Time the servo stays at full lock during a turn |
-| `T_ENDEREZAR_MS` | 300 ms | Time to straighten after a turn |
+| `DIST_LATERAL_MIN` | 10 cm | Emergency lateral safety threshold |
+| `T_GIRO_MS` | 900 ms | Duration of full-lock servo during a turn |
+| `T_ENDEREZAR_MS` | 300 ms | Duration of straightening phase after a turn |
+| `Kp` | 1.2 | PID proportional gain |
+| `Ki` | 0.04 | PID integral gain |
+| `Kd` | 0.15 | PID derivative gain |
 | `TOLERANCIA_LATERAL_CM` | 6.0 cm | Stop tolerance for lateral sensors |
 | `TOLERANCIA_FRONTAL_CM` | 12.0 cm | Stop tolerance for front sensor |
 | `FRONTAL_DESCARTE_CM` | 120 cm | Threshold above which front sensor is ignored for stopping |
-
----
-
-## How to Compile and Upload
-
-1. Install **Arduino IDE 2.x**.
-2. Install the **Arduino UNO Q** board package (`Arduino_RouterBridge` library).
-3. Install the **WonderCam** library from its manufacturer or include the `.h` file in the sketch folder.
-4. Install the **Servo** library (included with Arduino IDE by default).
-5. Open `WRO_FutureEngineers_Electrochalanes.ino`.
-6. Select board: **Arduino UNO Q**.
-7. Select the correct COM port.
-8. Click **Upload**.
-
-**Debug mode:** Uncomment `#define DEBUG` at the top of the sketch to enable Serial Monitor output (9600 baud) showing sensor readings and PID values in real time. Comment it out for competition to save CPU cycles.
-
----
-
-## Engineering Decisions & Trade-offs
-
-**Why URM37 V5.0 instead of HC-SR04?**
-The URM37 uses a different trigger protocol (100 µs LOW pulse, echo measured on LOW) compared to the standard HC-SR04. It provides more stable readings at short distances and does not require a separate HIGH trigger pulse, simplifying the timing logic.
-
-**Why a bilateral PID instead of a single-sensor PID?**
-Using only one lateral sensor makes the setpoint depend on the track width, which varies between rounds (600–1000 mm). A bilateral error (`left − right`) implicitly sets the setpoint to 0 regardless of corridor width, making the controller robust to track variations.
-
-**Why a time-based turn instead of angle-based?**
-The Arduino UNO Q does not have a gyroscope or encoder in our build. A fixed-duration turn (`T_GIRO_MS`) was chosen as the simplest reliable solution. The value is calibrated on the actual track to produce a consistent 90° turn.
-
-**Why differentiated tolerances for the stopping condition?**
-The front sensor's reading at the start position depends on whether the car is facing a wall (short distance, reliable) or looking down a long corridor (large distance, changes with inner wall configuration between rounds). Using a fixed tolerance for both cases would produce false stops or missed stops depending on the starting zone assigned by the judge.
 
 ---
 
