@@ -68,4 +68,190 @@ For traction, a 7.4V 400 mAh LiPo battery is used exclusively for the DC motor. 
 
 Three URM37 ultrasonic sensors are installed: one front-facing sensor to detect walls or obstacles, and two lateral sensors (left and right) to measure distance to side walls. These lateral values feed a PID controller that adjusts the Ackermann steering system to keep the vehicle centered.
 
+## Pin Mapping
+
+```
+DC Motor Driver
+  PWMA  → Pin 5   (10-bit PWM speed)
+  AIN1  → Pin 3   (direction control)
+  AIN2  → Pin 2   (direction control)
+
+Steering Servo
+  Signal → Pin 9
+
+URM37 FRONT sensor   (wall detection for turns)
+  TRIG  → Pin 8
+  ECHO  → Pin 14 (A0)
+
+URM37 LEFT sensor    (PID lane centering)
+  TRIG  → Pin 10
+  ECHO  → Pin 15 (A1)
+
+URM37 RIGHT sensor   (PID lane centering)
+  TRIG  → Pin 12
+  ECHO  → Pin 16 (A2)
+
+WonderCam
+  I2C   → SDA / SCL (standard)
+
+Start button
+  Signal → Pin 7  (INPUT_PULLUP, active LOW)
+```
+
+---
+
+## Software Architecture (Open Challenge)
+
+The program is structured as a **finite state machine (FSM)** with six states. Every iteration of `loop()` reads the three sensors sequentially, then executes the logic corresponding to the current state.
+
+### States
+
+```
+IDLE ──(button press)──► RUNNING ──(wall < 55 cm)──► TURNING
+                             ▲                            │
+                             └──(straighten time)── STRAIGHTENING
+                                                         │
+                                    (after 12 corners) ──►  APPROACH
+                                                              │
+                                         (sensors match start)──► DONE
+```
+
+| State | Description |
+|---|---|
+| `IDLE` | Motor stopped, waiting for start button. Sensors read and store starting position (3-sample average). |
+| `RUNNING` | Vehicle drives forward at cruise speed. PID controller keeps it centered. Camera polls for color. |
+| `TURNING` | Servo locked to max angle for `T_GIRO_MS` ms at reduced speed. Direction set by camera or lateral fallback. |
+| `STRAIGHTENING` | Servo returns to center for `T_ENDEREZAR_MS` ms before resuming `RUNNING`. Corner counter increments. |
+| `APPROACH` | After 12 corners (3 laps), vehicle slows down and compares live sensor readings to stored start values. |
+| `DONE` | Motor stops, servo centers. LED blinks continuously. |
+
+---
+
+## Key Algorithms
+
+### 1. URM37 V5.0 Sequential Reading
+
+The three sensors are fired **one at a time** with a 5 ms gap between them to avoid cross-echo interference. Each reading follows the URM37 V5.0 protocol:
+
+```cpp
+float leerURM37(int trigPin, int echoPin) {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(100);       // URM37 V5.0 needs 100µs LOW to trigger
+  unsigned long duration = pulseIn(echoPin, LOW, 50000);
+  digitalWrite(trigPin, HIGH);  // return to idle state (HIGH)
+  if (duration == 0 || duration >= 50000) return -1.0;
+  return (float)duration / 50.0; // URM37 formula: 50µs = 1 cm
+}
+```
+
+**Why sequential?** Simultaneous triggering causes the echo pulses to cross between sensors, producing incorrect or zero readings. Sequential firing eliminates this interference entirely.
+
+### 2. Bilateral PID Lane Centering
+
+The error is computed as the **difference between left and right lateral distances**. When the car is perfectly centered, `error = 0` regardless of corridor width (the track can be 1000 mm or 600 mm wide in the Open Challenge).
+
+```
+error = dist_left − dist_right
+```
+
+- `error > 0` → car is closer to the left wall → steer right
+- `error < 0` → car is closer to the right wall → steer left
+- `error = 0` → car is centered → drive straight
+
+The PID output is added to the servo center angle:
+
+```
+servo_angle = SERVO_CENTER + constrain(P + I + D, -MAX_LEFT_OFFSET, +MAX_RIGHT_OFFSET)
+```
+
+The integral term uses **anti-windup clamping** (±80 units) and is reset to zero after each turn to prevent accumulated error from previous straight sections affecting the next one.
+
+**Tunable parameters:**
+
+| Parameter | Default | Effect |
+|---|---|---|
+| `Kp` | 1.2 | Main proportional gain. Increase if centering feels loose. |
+| `Ki` | 0.04 | Corrects persistent drift. Decrease if oscillation appears. |
+| `Kd` | 0.15 | Damps rapid changes. Increase if the car over-corrects. |
+
+### 3. Turning Direction via WonderCam
+
+The WonderCam is pre-programmed (via its internal flash) to detect two color IDs:
+- **Color ID 1 = Orange** → turn **RIGHT**
+- **Color ID 2 = Blue** → turn **LEFT**
+
+The direction is latched on the **first detection** and reused for all subsequent 11 corners. Camera polling is active only during the `RUNNING` state to avoid false detections mid-turn.
+
+**Fallback (if no color is detected before the first wall):** The car reads both lateral sensors and turns toward the side with more free space.
+
+### 4. Starting Position Memory & APPROACH State
+
+When the start button is pressed (vehicle stationary), the program takes **3 averaged readings** from each sensor and stores them as the reference starting position:
+
+```
+pos_frontal_ini, pos_izq_ini, pos_der_ini
+```
+
+After completing the 12th corner, the vehicle enters `APPROACH` mode: it reduces speed to `VEL_APROXIMACION = 480` and continuously compares live readings against the stored values. When all valid sensors are within tolerance simultaneously, it enters `DONE` and stops the motor.
+
+Tolerances are differentiated by sensor reliability:
+- **Lateral sensors** (main criterion): ±6 cm
+- **Front sensor** (secondary): ±12 cm — discarded if the initial reading exceeded 120 cm (the sensor was looking down a long corridor, not a wall)
+
+---
+
+## Configurable Parameters
+
+All tunable constants are declared at the top of the sketch for easy access during track testing:
+
+| Constant | Default | Description |
+|---|---|---|
+| `SERVO_CENTRO` | 81 | Servo angle for straight-ahead driving |
+| `SERVO_MAX_IZQ` | 40 | Maximum left steering angle |
+| `SERVO_MAX_DER` | 138 | Maximum right steering angle |
+| `VEL_CRUCERO` | 680 | Straight-line speed (0–1023, 10-bit PWM) |
+| `VEL_GIRO` | 550 | Speed during a corner |
+| `VEL_APROXIMACION` | 480 | Speed during final approach to start |
+| `DIST_PARED_GIRO` | 55 cm | Front distance that triggers a turn |
+| `DIST_LATERAL_MIN` | 10 cm | Emergency wall safety threshold |
+| `T_GIRO_MS` | 900 ms | Time the servo stays at full lock during a turn |
+| `T_ENDEREZAR_MS` | 300 ms | Time to straighten after a turn |
+| `TOLERANCIA_LATERAL_CM` | 6.0 cm | Stop tolerance for lateral sensors |
+| `TOLERANCIA_FRONTAL_CM` | 12.0 cm | Stop tolerance for front sensor |
+| `FRONTAL_DESCARTE_CM` | 120 cm | Threshold above which front sensor is ignored for stopping |
+
+---
+
+## How to Compile and Upload
+
+1. Install **Arduino IDE 2.x**.
+2. Install the **Arduino UNO Q** board package (`Arduino_RouterBridge` library).
+3. Install the **WonderCam** library from its manufacturer or include the `.h` file in the sketch folder.
+4. Install the **Servo** library (included with Arduino IDE by default).
+5. Open `WRO_FutureEngineers_Electrochalanes.ino`.
+6. Select board: **Arduino UNO Q**.
+7. Select the correct COM port.
+8. Click **Upload**.
+
+**Debug mode:** Uncomment `#define DEBUG` at the top of the sketch to enable Serial Monitor output (9600 baud) showing sensor readings and PID values in real time. Comment it out for competition to save CPU cycles.
+
+---
+
+## Engineering Decisions & Trade-offs
+
+**Why URM37 V5.0 instead of HC-SR04?**
+The URM37 uses a different trigger protocol (100 µs LOW pulse, echo measured on LOW) compared to the standard HC-SR04. It provides more stable readings at short distances and does not require a separate HIGH trigger pulse, simplifying the timing logic.
+
+**Why a bilateral PID instead of a single-sensor PID?**
+Using only one lateral sensor makes the setpoint depend on the track width, which varies between rounds (600–1000 mm). A bilateral error (`left − right`) implicitly sets the setpoint to 0 regardless of corridor width, making the controller robust to track variations.
+
+**Why a time-based turn instead of angle-based?**
+The Arduino UNO Q does not have a gyroscope or encoder in our build. A fixed-duration turn (`T_GIRO_MS`) was chosen as the simplest reliable solution. The value is calibrated on the actual track to produce a consistent 90° turn.
+
+**Why differentiated tolerances for the stopping condition?**
+The front sensor's reading at the start position depends on whether the car is facing a wall (short distance, reliable) or looking down a long corridor (large distance, changes with inner wall configuration between rounds). Using a fixed tolerance for both cases would produce false stops or missed stops depending on the starting zone assigned by the judge.
+
+---
+
+
 
