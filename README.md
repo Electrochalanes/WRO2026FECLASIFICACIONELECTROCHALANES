@@ -304,6 +304,134 @@ Initially the camera polled throughout the entire run. This caused false detecti
 | `TOLERANCIA_FRONTAL_CM` | 12.0 cm | Stop tolerance for front sensor |
 | `FRONTAL_DESCARTE_CM` | 120 cm | Threshold above which front sensor is ignored for stopping |
 
+## 3. Obstacle Challenge — Software Architecture
+
+### Overview
+
+The Obstacle Challenge program uses two independent **finite state machines** that run in sequence each `loop()` iteration:
+
+1. **Evasion FSM** (`estadoEsquive`) — handles the three-phase maneuver around a detected color block.
+2. **Corner FSM** (`estadoGiro`) — handles 90° turns when a front wall is detected and the left sensor reads open space.
+
+A **lap counter** (`contadorGiros`) tracks completed corners. After 12 corners (3 full laps), the robot stops automatically.
+
+### State Machines
+
+#### Corner FSM
+
+```
+SIGUIENDO ──(front < 34 cm AND left > 100 cm)──► GIRANDO
+                                                      │
+                                           (after DURACION_GIRO_MS)
+                                                      │
+                                                 RETROCEDIENDO
+                                                      │
+                                           (after TIEMPO_RETROCESO)
+                                                      │
+                                    contadorGiros++ → SIGUIENDO
+                                    (if contadorGiros == 12 → STOP)
+```
+
+#### Evasion FSM
+
+```
+LIBRE ──(block area > AREA_MINIMA)──► GIRANDO_ESQ
+                                           │
+                                  (after TIEMPO_ESQUIVE)
+                                           │
+                                       RECTO_ESQ
+                                           │
+                                  (after TIEMPO_RECTO)
+                                           │
+                                        REACOMODO
+                                           │
+                                  (after TIEMPO_REACOMODO)
+                                           │
+                                         LIBRE
+```
+
+### Priority Order
+
+Each `loop()` checks systems in this fixed priority:
+
+1. **Button** — arms the robot (WRO rule: vehicle must not move until operator releases)
+2. **Corner FSM** — if currently turning or reversing, executes exclusively and returns
+3. **Evasion FSM** — if currently in an evasion phase, executes exclusively and returns
+4. **Sensor reading** — front and left ultrasonic sensors
+5. **Corner detection** — triggers corner FSM if wall < threshold and left is open
+6. **Color detection** — camera polls for red/green blocks
+7. **Decision logic** — selects evasion, tracking, or straight ahead
+
+---
+
+## Obstacle Challenge — Source Code
+
+The complete annotated source code for the Obstacle Challenge is located at `src/obstacle_challenge/obstacle_challenge.ino`.
+
+
+## Systems Thinking and Engineering Decisions
+
+### Subsystem Interaction
+
+```
+[Power Bank 5V] ──► [Arduino UNO Q] ──► [TB6612FNG] ◄── [LiPo 7.4V]
+                          │                   │
+               ┌──────────┼──────────┐   [DC Motor 50:1]
+               │          │          │
+         [WonderCam]  [2× URM37] [Servo TD-8125]
+               │          │          │
+          [Color]     [Corner +   [Ackermann
+        [Detection]   Wall detect]  Steering]
+               │          │
+        [Evasion FSM] [Corner FSM]
+               └──────────┘
+                    │
+              [Lap Counter]
+                    │
+              [Auto-Stop at 12]
+```
+
+### Key Trade-offs
+
+**Time-based evasion vs. closed-loop position control:**
+A vision-only loop that continuously tracks the block until it leaves frame would be more adaptive, but risks oscillation when the block is partially visible at an angle. The fixed-time three-phase sequence (evade → straight → reposition) produces repeatable trajectories once timing constants are calibrated on the actual track.
+
+**Area threshold (AREA_MINIMA = 5000 px²) vs. distance sensor:**
+Using pixel area as a proximity proxy avoids adding a third sensor. When the block is far away its bounding box is small; when close it is large. The 5000 px² threshold corresponds empirically to a block at ~35 cm from the camera.
+
+**Left sensor only (vs. bilateral):**
+The Obstacle Challenge corridor has obstacles in defined lanes. A left-only sensor detects the open corner condition (left > 100 cm) without needing right-side data. This simplifies wiring and avoids cross-echo interference between simultaneous sensor triggers.
+
+### Risk Assessment
+
+| Risk | Mitigation |
+| --- | --- |
+| Block detected at corner entry | Corner FSM has higher priority than evasion FSM — corner always executes first |
+| Camera misidentifies color in bright venue lighting | WonderCam profiles are pre-calibrated in flash; AREA_MINIMA filters small false detections |
+| Robot does not complete reposition in time for next block | TIEMPO_REACOMODO (500 ms) tuned so robot is centered before reaching the next block position |
+| 12-turn count drifts | Count increments only inside RETROCEDIENDO state after full turn, not on sensor reading |
+
+---
+
+## Configurable Parameters
+
+| Constant | Default | Description |
+| --- | --- | --- |
+| `CENTRO_SERVO` | 79 | Servo angle for straight-ahead driving (°) |
+| `VEL_NORMAL` | 100 | Cruise motor speed (PWM 0–255) |
+| `VEL_GIRO` | 110 | Motor speed during 90° corner turn |
+| `UMBRAL_FRENTE` | 34.0 cm | Front wall distance that triggers a corner turn |
+| `DURACION_GIRO_MS` | 1200 ms | Duration of full-lock servo during a corner |
+| `TIEMPO_RETROCESO` | 500 ms | Duration of reverse after corner |
+| `AREA_MINIMA` | 5000 px² | Minimum block area to trigger full evasion |
+| `ANGULO_ESQ_ROJO` | 122° | Servo angle for evading a red block (right) |
+| `ANGULO_ESQ_VERDE` | 40° | Servo angle for evading a green block (left) |
+| `TIEMPO_ESQUIVE` | 600 ms | Evasion Phase 1: duration of evasion turn |
+| `TIEMPO_RECTO` | 400 ms | Evasion Phase 2: duration of straight segment |
+| `TIEMPO_REACOMODO` | 500 ms | Evasion Phase 3: duration of reposition turn |
+| `TOTAL_GIROS` | 12 | Total corners before automatic stop (3 laps × 4 corners) |
+
+
 ---
 
 
