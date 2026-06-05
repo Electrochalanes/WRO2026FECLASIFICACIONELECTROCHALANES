@@ -1,6 +1,3 @@
-Engineering materials
-====
-
 # Electrochalanes — WRO Future Engineers 2026 - Autonomous Self-Driving Car 🇲🇽
 
 ---
@@ -18,7 +15,7 @@ Engineering materials
 | `t-photos` | 2 team photos (official + fun) |
 | `v-photos` | 6 vehicle photos (all sides, top and bottom) |
 | `video` | `video.md` with links to autonomous driving demonstrations |
-| `schemes` | Wiring and electromechanical diagrams  |
+| `schemes` | Wiring and electromechanical diagrams |
 | `src` | Complete control software for all programmed components |
 | `models` | 3D-printable STL files for custom vehicle parts |
 
@@ -26,18 +23,18 @@ Engineering materials
 
 ## Introduction
 
-This repository documents the complete engineering process of our autonomous vehicle for the **WRO Future Engineers 2026**. 
+This repository documents the complete engineering process of our autonomous vehicle for the **WRO Future Engineers 2026**.
 
 The open challenge software is organized into a single Arduino sketch that integrates six modules:
 
-1. **Sensor module** — Sequential URM37 ultrasonic readings (front, left, right)
+1. **Sensor module** — Sequential HC-SR04 ultrasonic readings (front, left, right)
 2. **Vision module** — WonderCam color detection for turning direction
 3. **PID controller** — Bilateral lane centering using left/right sensor error
 4. **State machine** — Six-state FSM controlling overall vehicle behavior
 5. **Turn sequencer** — Time-based 90° cornering with camera/sensor fallback
 6. **Stop locator** — Sensor-based return to starting position after 3 laps
 
-To compile and upload: install **Arduino IDE 2.x**, add the **Arduino UNO Q** board package, install the **WonderCam** and **Servo** libraries, open the `.ino` file, select board **Arduino UNO Q**, choose the correct COM port, and click Upload. For real-time debugging, uncomment `#define DEBUG` to enable Serial Monitor output at 9600 baud.
+To compile and upload: install **Arduino IDE 2.x**, add the **Arduino UNO R4 Minima** board package (`arduino:renesas_uno`), install the **WonderCam** and **Servo** libraries, open the `.ino` file, select board **Arduino UNO R4 Minima**, choose the correct COM port, and click Upload. For real-time debugging, uncomment `#define DEBUG` to enable Serial Monitor output at 115200 baud.
 
 ---
 
@@ -45,13 +42,13 @@ To compile and upload: install **Arduino IDE 2.x**, add the **Arduino UNO Q** bo
 
 | Component | Model | Purpose |
 |---|---|---|
-| Main controller | Arduino UNO Q | Central processing — sensor reading, PID, motor and servo control |
+| Main controller | Arduino UNO R4 Minima | Central processing — sensor reading, PID, motor and servo control |
 | DC motor driver | TB6612FNG Dual Motor Driver | Bidirectional speed control via 10-bit PWM |
 | Drive motor | 50:1 Micro Metal Gearmotor HPCB 6V | Forward traction |
 | Steering servo | Digital Servomotor TD-8125 | Directional control via Ackermann steering |
-| Ultrasonic sensor ×3 | DFRobot URM37 V5.0 | Front wall detection + bilateral lane centering |
+| Ultrasonic sensor ×3 | HC-SR04 | Front wall detection + bilateral lane centering |
 | Color camera | Hiwonder WonderCam V2.0 | Detects orange/blue floor lines to decide turning direction |
-| Start button | Push button (Pin 7, INPUT_PULLUP) | Triggers start sequence per WRO rules 9.10–9.11 |
+| Start button | Push button (Pin 11, INPUT_PULLUP) | Triggers start sequence per WRO rules 9.10–9.11 |
 | Logic power | 5V 3A power bank | Supplies Arduino, sensors, camera, and servo |
 | Motor power | 7.4V 400 mAh LiPo | Dedicated traction supply, isolated from logic |
 | Structure | PLA, TPU, acrylic, M3/M5 screws, M5/M16 bearings | Chassis, tires, and mechanical assembly |
@@ -77,8 +74,8 @@ The **50:1 Micro Metal Gearmotor HPCB 6V** (0.74 kg·cm stall torque, ~650 rpm n
 
 | Option | Ratio | Speed | Torque | Result |
 |---|---|---|---|---|
-| **Chosen: HPCB 6V 50:1** | 50:1 | ~650 rpm | 0.74 kg·cm |  Sufficient torque, controllable speed for PID |
-| Discarded: high-speed motor | 10:1 | ~3000 rpm | ~0.15 kg·cm |  Too fast — PID could not correct lateral drift in time |
+| **Chosen: HPCB 6V 50:1** | 50:1 | ~650 rpm | 0.74 kg·cm | ✅ Sufficient torque, controllable speed for PID |
+| Discarded: high-speed motor | 10:1 | ~3000 rpm | ~0.15 kg·cm | ❌ Too fast — PID could not correct lateral drift in time |
 
 The 50:1 ratio provides enough torque to accelerate smoothly while keeping speed low enough for the PID controller to react before lateral drift exceeds recoverable limits.
 
@@ -102,12 +99,12 @@ Two independent power rails isolate motor switching noise from logic and sensor 
 
 | Component | Current |
 |---|---|
-| Arduino UNO Q | ~200 mA |
+| Arduino UNO R4 Minima | ~200 mA |
 | WonderCam V2.0 | ~300 mA |
-| 3× URM37 sensors | ~60 mA total |
+| 3× HC-SR04 sensors | ~45 mA total (~15 mA each) |
 | TD-8125 servo (peak) | ~1,500 mA |
 | TB6612FNG logic stage | <10 mA |
-| **Total peak** | **~2,070 mA** |
+| **Total peak** | **~2,055 mA** |
 
 Servo peaks are short and do not coincide with Arduino or camera peaks. Measured current during full operation stays consistently below 2.5 A.
 
@@ -125,8 +122,8 @@ Estimated autonomy: 0.4 Ah ÷ 1.6 A = **~15 minutes** — more than sufficient f
 
 ### Sensor Selection and Placement
 
-**Why URM37 V5.0 over HC-SR04?**
-The URM37 includes built-in temperature compensation for consistent accuracy in variable-temperature venues. Its trigger protocol (100 µs LOW pulse, echo read on LOW) avoids the double-pulse timing of HC-SR04, simplifying the driver code and reducing timing errors.
+**Why HC-SR04?**
+The HC-SR04 is a widely available, cost-effective sensor with a well-documented standard protocol (10 µs HIGH trigger pulse, echo read on HIGH), reliable performance at the distances used in this competition (10–200 cm), and straightforward integration with Arduino. Its simple driver code reduces timing complexity and is fully compatible with the R4 Minima's `pulseIn` function.
 
 | Sensor | Position | Height | Justification |
 |---|---|---|---|
@@ -167,22 +164,24 @@ IDLE ──(button press)──► RUNNING ──(front < 55 cm)──► TURNIN
 | `APPROACH` | After 12 corners, slows and compares live readings to stored start values. |
 | `DONE` | Motor stops, servo centers, LED blinks. |
 
-### Algorithm 1 — URM37 Sequential Reading
+### Algorithm 1 — HC-SR04 Sequential Reading
 
 All three sensors are fired **one at a time** with 5 ms separation to prevent cross-echo interference — a failure discovered in V1 testing where simultaneous triggering caused random zero readings.
 
 ```cpp
-float leerURM37(int trigPin, int echoPin) {
+float leerHCSR04(int trigPin, int echoPin) {
   digitalWrite(trigPin, LOW);
-  delayMicroseconds(100);         // URM37 V5.0: 100µs LOW to trigger
-  unsigned long duration = pulseIn(echoPin, LOW, 50000);
-  digitalWrite(trigPin, HIGH);    // return to idle (HIGH)
-  if (duration == 0 || duration >= 50000) return -1.0;
-  return (float)duration / 50.0;  // 50µs = 1 cm (URM37-specific formula)
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);          // HC-SR04: 10 µs HIGH to trigger
+  digitalWrite(trigPin, LOW);
+  unsigned long duration = pulseIn(echoPin, HIGH, 30000);
+  if (duration == 0) return -1.0;
+  return (float)duration / 58.0;  // standard HC-SR04 formula
 }
 ```
 
-The 50,000 µs timeout caps range at 100 cm and prevents `pulseIn` from blocking when no wall is present.
+The 30,000 µs timeout caps range at ~5 m and prevents `pulseIn` from blocking when no wall is present. TRIG pins are initialized to `LOW` at startup (idle state for HC-SR04).
 
 ### Algorithm 2 — Bilateral PID Lane Centering
 
@@ -201,7 +200,7 @@ The integral uses **anti-windup clamping** (±80 units) and **resets after every
 | Kp | Ki | Kd | Observed behavior |
 |---|---|---|---|
 | 0.8 | 0.04 | 0.10 | Loose — 3 full sections to correct a 5 cm lateral offset |
-| **1.2** | **0.04** | **0.15** | ** Current — corrects within 1 section, no oscillation** |
+| **1.2** | **0.04** | **0.15** | **✅ Current — corrects within 1 section, no oscillation** |
 | 1.8 | 0.04 | 0.15 | Overshoot — side-to-side oscillation in long straights |
 
 ### Algorithm 3 — Turning Direction via WonderCam
@@ -246,14 +245,14 @@ After the 12th corner, `APPROACH` state reduces speed to 480 PWM and compares li
 ### Subsystem Interaction
 
 ```
-[Power Bank 5V] ──► [Arduino UNO Q] ──► [TB6612FNG] ◄── [LiPo 7.4V]
-                          │                   │
-               ┌──────────┼──────────┐   [DC Motor 50:1]
-               │          │          │
-         [WonderCam]  [3× URM37] [Servo TD-8125]
-               │          │          │
-          [Vision]    [PID +     [Ackermann
-          [Module]  Wall detect]  Steering]
+[Power Bank 5V] ──► [Arduino UNO R4 Minima] ──► [TB6612FNG] ◄── [LiPo 7.4V]
+                               │                       │
+                    ┌──────────┼──────────┐       [DC Motor 50:1]
+                    │          │          │
+              [WonderCam]  [3× HC-SR04] [Servo TD-8125]
+                    │          │          │
+               [Vision]    [PID +     [Ackermann
+               [Module]  Wall detect]  Steering]
 ```
 
 All sensor data enters the FSM every loop cycle. The FSM decides servo angle and motor speed based on current state and sensor values.
@@ -304,7 +303,9 @@ Initially the camera polled throughout the entire run. This caused false detecti
 | `TOLERANCIA_FRONTAL_CM` | 12.0 cm | Stop tolerance for front sensor |
 | `FRONTAL_DESCARTE_CM` | 120 cm | Threshold above which front sensor is ignored for stopping |
 
-## 3. Obstacle Challenge — Software Architecture
+---
+
+## Obstacle Challenge — Software Architecture
 
 ### Overview
 
@@ -357,7 +358,7 @@ Each `loop()` checks systems in this fixed priority:
 1. **Button** — arms the robot (WRO rule: vehicle must not move until operator releases)
 2. **Corner FSM** — if currently turning or reversing, executes exclusively and returns
 3. **Evasion FSM** — if currently in an evasion phase, executes exclusively and returns
-4. **Sensor reading** — front and left ultrasonic sensors
+4. **Sensor reading** — front and left ultrasonic sensors (HC-SR04)
 5. **Corner detection** — triggers corner FSM if wall < threshold and left is open
 6. **Color detection** — camera polls for red/green blocks
 7. **Decision logic** — selects evasion, tracking, or straight ahead
@@ -374,21 +375,21 @@ The complete annotated source code for the Obstacle Challenge is located at `src
 ### Subsystem Interaction
 
 ```
-[Power Bank 5V] ──► [Arduino UNO Q] ──► [TB6612FNG] ◄── [LiPo 7.4V]
-                          │                   │
-               ┌──────────┼──────────┐   [DC Motor 50:1]
-               │          │          │
-         [WonderCam]  [2× URM37] [Servo TD-8125]
-               │          │          │
-          [Color]     [Corner +   [Ackermann
-        [Detection]   Wall detect]  Steering]
-               │          │
-        [Evasion FSM] [Corner FSM]
-               └──────────┘
-                    │
-              [Lap Counter]
-                    │
-              [Auto-Stop at 12]
+[Power Bank 5V] ──► [Arduino UNO R4 Minima] ──► [TB6612FNG] ◄── [LiPo 7.4V]
+                               │                       │
+                    ┌──────────┼──────────┐       [DC Motor 50:1]
+                    │          │          │
+              [WonderCam]  [2× HC-SR04] [Servo TD-8125]
+                    │          │          │
+               [Color]     [Corner +   [Ackermann
+             [Detection]   Wall detect]  Steering]
+                    │          │
+             [Evasion FSM] [Corner FSM]
+                    └──────────┘
+                         │
+                   [Lap Counter]
+                         │
+                   [Auto-Stop at 12]
 ```
 
 ### Key Trade-offs
@@ -405,7 +406,7 @@ The Obstacle Challenge corridor has obstacles in defined lanes. A left-only sens
 ### Risk Assessment
 
 | Risk | Mitigation |
-| --- | --- |
+|---|---|
 | Block detected at corner entry | Corner FSM has higher priority than evasion FSM — corner always executes first |
 | Camera misidentifies color in bright venue lighting | WonderCam profiles are pre-calibrated in flash; AREA_MINIMA filters small false detections |
 | Robot does not complete reposition in time for next block | TIEMPO_REACOMODO (500 ms) tuned so robot is centered before reaching the next block position |
@@ -413,10 +414,10 @@ The Obstacle Challenge corridor has obstacles in defined lanes. A left-only sens
 
 ---
 
-## Configurable Parameters
+## Configurable Parameters — Obstacle Challenge
 
 | Constant | Default | Description |
-| --- | --- | --- |
+|---|---|---|
 | `CENTRO_SERVO` | 79 | Servo angle for straight-ahead driving (°) |
 | `VEL_NORMAL` | 100 | Cruise motor speed (PWM 0–255) |
 | `VEL_GIRO` | 110 | Motor speed during 90° corner turn |
@@ -431,8 +432,4 @@ The Obstacle Challenge corridor has obstacles in defined lanes. A left-only sens
 | `TIEMPO_REACOMODO` | 500 ms | Evasion Phase 3: duration of reposition turn |
 | `TOTAL_GIROS` | 12 | Total corners before automatic stop (3 laps × 4 corners) |
 
-
 ---
-
-
-
