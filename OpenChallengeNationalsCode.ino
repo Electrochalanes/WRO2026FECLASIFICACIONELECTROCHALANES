@@ -1,26 +1,28 @@
-#include <Servo.h>
+#include <ESP32Servo.h>
 
-#define TRIG_FRENTE 8
-#define ECHO_FRENTE 4
-#define TRIG_IZQ    10
-#define ECHO_IZQ    6
-#define TRIG_DER    12
-#define ECHO_DER    7
-#define PIN_SERVO   9
-#define PIN_BOTON   11
+#define TRIG_FRENTE 33
+#define ECHO_FRENTE 19
+#define TRIG_DER 18
+#define ECHO_DER 5
+#define TRIG_IZQ 32
+#define ECHO_IZQ 35
+#define PIN_SERVO 21
+#define PIN_BOTON 34
 
-const int PWMA = 5;
-const int AIN1 = 3;
-const int AIN2 = 2;
+Servo Direccion;
 
-Servo direccion;
+const int PWMA = 14;
+const int AIN1 = 12;
+const int AIN2  =13;
 
 #define CENTRO         81
-#define VEL_NORMAL     90
-#define VEL_GIRO       120
-#define DISTANCIA_GIRO 50
+#define VEL_NORMAL     180
+#define VEL_GIRO       210
+#define DISTANCIA_GIRO 80
 #define TOTAL_GIROS    12
-#define TGIRO          1650
+#define TGIRO          1400
+#define TFinal         2400
+#define TFront         1000
 
 bool robotActivo      = false;
 float ulLecturaFrente = 999;
@@ -43,8 +45,9 @@ double dt = 0;
 
 int contadorGiros = 0;
 int opcion        = 0; // 0=sin definir, 1=derecha, 2=izquierda
+int opcion_2      = 0;
 
-float leerDistanciaFrente(int trig, int echo) {
+float leerDistancia(int trig, int echo) {
   digitalWrite(trig, LOW);
   delayMicroseconds(2);
   digitalWrite(trig, HIGH);
@@ -55,43 +58,13 @@ float leerDistanciaFrente(int trig, int echo) {
   return duracion / 58.0;
 }
 
-float leerDistancia(int trig, int echo) {
-  float muestras[5];
-  int validas = 0;
-
-  for (int i = 0; i < 5; i++) {
-    digitalWrite(trig, LOW);
-    delayMicroseconds(2);
-    digitalWrite(trig, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(trig, LOW);
-    unsigned long duracion = pulseIn(echo, HIGH, 30000);
-    if (duracion > 0 && duracion < 30000) {
-      muestras[validas++] = duracion / 58.0;
-    }
-    delay(30);
-  }
-
-  if (validas == 0) return -1;
-
-  for (int i = 0; i < validas - 1; i++)
-    for (int j = i + 1; j < validas; j++)
-      if (muestras[i] > muestras[j]) {
-        float tmp = muestras[i];
-        muestras[i] = muestras[j];
-        muestras[j] = tmp;
-      }
-
-  return muestras[validas / 2];
-}
-
 void moverServo(int angulo) {
-  direccion.write(constrain(angulo, 0, 180));
+  Direccion.write(constrain(angulo, 0, 180));
 }
 
 void adelante(int velocidad) {
-  digitalWrite(AIN1, HIGH);
-  digitalWrite(AIN2, LOW);
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, HIGH);
   analogWrite(PWMA, velocidad);
 }
 
@@ -107,7 +80,7 @@ void girarIzquierda() {
   delay(TGIRO);
   moverServo(CENTRO);
   adelante(VEL_NORMAL);
-  delay(1000);
+  delay(TFront);
   ulLecturaFrente = 999;
   error = 0; error_anterior = 0; suma_errores = 0;
   tiempoPrevio = millis();
@@ -120,7 +93,7 @@ void girarDerecha() {
   delay(TGIRO);
   moverServo(CENTRO);
   adelante(VEL_NORMAL);
-  delay(1000);
+  delay(TFront);
   ulLecturaFrente = 999;
   error = 0; error_anterior = 0; suma_errores = 0;
   tiempoPrevio = millis();
@@ -181,8 +154,8 @@ void setup() {
   pinMode(TRIG_DER,    OUTPUT); digitalWrite(TRIG_DER,    HIGH);
   pinMode(ECHO_DER,    INPUT);
 
-  direccion.attach(PIN_SERVO);
-  direccion.write(CENTRO);
+  Direccion.attach(PIN_SERVO);
+  Direccion.write(CENTRO);
 
   pinMode(AIN1, OUTPUT);
   pinMode(AIN2, OUTPUT);
@@ -194,8 +167,8 @@ void setup() {
 
 void loop() {
   float distFrente = leerDistancia(TRIG_FRENTE, ECHO_FRENTE);
-  float distDer    = leerDistanciaFrente(TRIG_DER, ECHO_DER);
-  float distIzq    = leerDistanciaFrente(TRIG_IZQ, ECHO_IZQ);
+  float distDer    = leerDistancia(TRIG_DER, ECHO_DER);
+  float distIzq    = leerDistancia(TRIG_IZQ, ECHO_IZQ);
 
   if (distFrente > 0) ulLecturaFrente = distFrente;
   if (distDer    > 0) ulLecturaDer    = distDer;
@@ -209,12 +182,20 @@ void loop() {
     delay(50);
     if (digitalRead(PIN_BOTON) == LOW) {
       // ✅ Dos setpoints independientes
-      setpoint_Der = (ulLecturaDer < 400) ? ulLecturaDer : 40.0;
-      setpoint_Izq = (ulLecturaIzq < 400) ? ulLecturaIzq : 40.0;
-      Serial.print("SP_Der: "); Serial.print(setpoint_Der);
-      Serial.print(" | SP_Izq: "); Serial.println(setpoint_Izq);
-      tiempoPrevio = millis();
-      robotActivo  = true;
+      if (opcion_2 == 0) {
+        setpoint_Der = (ulLecturaDer < 400) ? ulLecturaDer : 40.0;
+        setpoint_Izq = (ulLecturaIzq < 400) ? ulLecturaIzq : 40.0;
+
+        if (setpoint_Der > setpoint_Izq) {
+          opcion_2 = 1;
+        } else {
+          opcion_2 = 2;
+        }
+        Serial.print("SP_Der: "); Serial.print(setpoint_Der);
+        Serial.print(" | SP_Izq: "); Serial.println(setpoint_Izq);
+        tiempoPrevio = millis();
+        robotActivo  = true;
+      }
     }
   }
 
@@ -229,7 +210,7 @@ void loop() {
   tiempoPrevio = ahora;
 
   // --- Giro ---
-  if (ulLecturaFrente < DISTANCIA_GIRO) {
+  if (ulLecturaFrente < DISTANCIA_GIRO && (distIzq > 100 || distDer > 100)) {
 
     if (opcion == 0) {
       // ✅ Primer giro — determinar dirección
@@ -261,6 +242,8 @@ void loop() {
     Serial.print("/"); Serial.println(TOTAL_GIROS);
 
     if (contadorGiros >= TOTAL_GIROS) {
+      adelante(VEL_NORMAL);
+      delay(TFinal);
       detenerRobot();
       robotActivo = false;
       Serial.println("=== 3 VUELTAS COMPLETADAS ===");
@@ -269,13 +252,14 @@ void loop() {
   }
 
   // --- PID según opción ---
-  if (opcion == 1) {
-    PIDderecho();
-  } else if (opcion == 2) {
+  if (opcion_2 == 1) {
     PIDizquierdo();
+  } else if (opcion_2 == 2) {
+    PIDderecho();
   } else {
     // Antes del primer giro → recto
     moverServo(CENTRO);
     adelante(VEL_NORMAL);
   }
+
 }
