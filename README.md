@@ -39,13 +39,13 @@ This repository documents the complete engineering process of our autonomous veh
 
 As of this revision, the vehicle's main controller is an **ESP32** dev board paired with a **custom shield** (see [Components](#components) and [Power and Sensor Architecture](#2-power-and-sensor-architecture)), replacing the Arduino UNO R4 Minima used previously. The control software is split into two independent sketches, one per challenge:
 
-**Open Challenge** (`src/open_challenge/OpenChallengeNationalsCode.ino`) is organized around:
+**Open Challenge** (`src/OpenChallengeNationalsCode.ino`) is organized around:
 1. **Sensor module** — sequential HC-SR04 readings (front, left, right)
 2. **Adaptive single-wall PID controller** — follows whichever side wall was closer at the start of the run
 3. **Corner-direction & turn sequencer** — determines and executes 90° turns using ultrasonic data only (the WonderCam camera is **no longer used** in this challenge — see [Open Challenge — Software Architecture](#open-challenge--software-architecture))
 4. **Lap/corner counter and final-stop routine**
 
-**Obstacle Challenge** (`src/obstacle_challenge/ObstaclesChallengeNationalsCode.ino`) is organized around:
+**Obstacle Challenge** (`src/ObstaclesChallengeNationalsCode.ino`) is organized around:
 1. **Sensor module** — HC-SR04 front/left/right + push-button start trigger
 2. **Vision module** — WonderCam color detection (red/green traffic pillars)
 3. **Two-tier evasion strategy** — proportional visual steering while a pillar is far away, full stop-reverse-swerve maneuver once it's close
