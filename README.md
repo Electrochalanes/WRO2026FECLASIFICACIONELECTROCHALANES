@@ -85,8 +85,18 @@ To compile and upload either sketch: install **Arduino IDE 2.x**, add the **ESP3
 | I/O voltage | 5V-tolerant | **3.3V-only** | Introduced a real integration risk — see the level-shifting note below. |
 | Wireless radios | None | Wi-Fi + Bluetooth on-die | **Must stay unused during official rounds** — WRO 2026 rule 11.10 prohibits any wireless communication while the vehicle is running. The sketches never call `WiFi.begin()` / `BluetoothSerial`, so both radios stay off by default; this is intentional and should not be re-enabled for competition builds. |
 
-**Engineering risk introduced by the migration (and why the custom shield exists):** the HC-SR04's ECHO output is a 5V logic signal, but every ESP32 GPIO is rated for 3.3V input only — driving an ECHO pin directly from a 5V sensor risks damaging the microcontroller over repeated use. Additionally, GPIO34 (used for the start button) is one of the ESP32's *input-only* pins and, unlike most other GPIOs, has **no internal pull-up/pull-down resistor at all**, so `pinMode(PIN_BOTON, INPUT_PULLUP)` in software does not actually provide one. The custom shield exists to solve both problems in one board: resistor voltage dividers on the three ECHO lines (stepping 5V down into the ESP32's safe range) and an external pull-up resistor on the button line, in addition to simply consolidating what used to be loose breadboard wiring. *(If your shield's actual schematic differs from this description, please update this section and `schemes/` accordingly — this description reflects the standard reasoning for this kind of migration and should be checked against your board.)*
+**Engineering risk introduced by the migration (and why the custom shield exists):** the HC-SR04's ECHO output is a 5V logic signal, but every ESP32 GPIO is rated for 3.3V input only — driving an ECHO pin directly from a 5V sensor risks damaging the microcontroller over repeated use. Additionally, GPIO34 (used for the start button) is one of the ESP32's *input-only* pins and, unlike most other GPIOs, has **no internal pull-up/pull-down resistor at all**, so `pinMode(PIN_BOTON, INPUT_PULLUP)` in software does not actually provide one. The custom shield exists to solve both problems in one board: resistor voltage dividers on the three ECHO lines (stepping 5V down into the ESP32's safe range) and an external pull-up resistor on the button line, in addition to simply consolidating what used to be loose breadboard wiring. 
 
+### Shield Design and Power Distribution
+
+No commercial board combines an ESP32 with a TB6612FNG H-bridge in the footprint we needed — the few options that exist are either pin-incompatible or considerably larger than necessary. Rather than continuing to wire both onto a breadboard, we designed our own pin-expansion shield: laid out like any commercial ESP32 shield, but with its header arrangement built specifically around the H-bridge.
+
+**How it's wired:**
+- Power comes in through a barrel jack or the USB-C port.
+- That input feeds a regulator that steps 5V down to the ESP32's native 3.3V logic supply.
+- The ESP32's header pins are fed directly from the unregulated input rail rather than through that regulator, so raw 5V is still available at the header for peripherals that need it, separate from the ESP32's own regulated 3.3V.
+- A few ESP32 GPIOs are wired exclusively to the TB6612FNG and aren't broken out to the general-purpose header at all; the driver needs them, so they're still fully usable from code, just not available for anything else on the shield.
+- The TB6612FNG's logic side shares the ESP32's rail, but the motor supply comes directly from the main power input, bypassing the regulator.
 ---
 
 ## 1. Mobility and Mechanical Design
