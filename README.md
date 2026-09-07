@@ -523,7 +523,6 @@ The complete, commented source for both challenges lives at:
 | ESP32 GPIO damage from 5V HC-SR04 echo signals | Voltage-divider level shifting on the shield (see [Components](#components)) |
 | Unreliable button reads (GPIO34 has no internal pull resistor) | External pull-up resistor on the shield |
 | Wi-Fi/Bluetooth radios interfering with rule 11.10 compliance | Sketches never initialize either radio; verify this remains true in any future firmware update |
-| Pillar evasion triggered on the wrong side (see code review finding above) | Flagged in source and documentation; **requires field verification before competition** |
 | Corner never detected (front/lateral sensor timeout at the critical moment) | Last known-good reading is retained rather than reset to zero, avoiding a spurious "wall is gone" false read |
 | Servo command outside a safe range (Obstacle sketch's `moverServo()` doesn't `constrain()`) | All current constants are within [45°, 135°], a safe range for the TD-8125; recommend adding a `constrain()` call to match the Open Challenge sketch's safer implementation |
 
