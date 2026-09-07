@@ -581,6 +581,4 @@ This section exists so reviewers (and future us) can see open items at a glance,
 
 1. **Pillar evasion color/threshold pairing** — needs field verification; see the callout under Obstacle Challenge software architecture.
 2. **No automated final parking maneuver** — the Obstacle Challenge run currently stops after the 12th corner rather than returning to the parking box.
-3. **Custom shield schematic** — this README describes the shield's intended role (level shifting + button pull-up + wiring consolidation); confirm this matches the actual board and update `schemes/` with its schematic if not already included.
-4. **`moverServo()` without `constrain()` in the Obstacle Challenge sketch** — currently safe given the constants in use, but worth hardening to match the Open Challenge sketch.
-5. **Reused constant for readability** — `girarIzquierda()` in the Obstacle Challenge sketch reuses `AesquiveRojo` as a reverse-steering angle; consider a dedicated constant name for clarity in a future revision.
+3. **`moverServo()` without `constrain()` in the Obstacle Challenge sketch** — currently safe given the constants in use, but worth hardening to match the Open Challenge sketch.
