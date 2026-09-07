@@ -579,6 +579,5 @@ The complete, commented source for both challenges lives at:
 
 This section exists so reviewers (and future us) can see open items at a glance, in addition to the trade-off reasoning above:
 
-1. **Pillar evasion color/threshold pairing** — needs field verification; see the callout under Obstacle Challenge software architecture.
-2. **No automated final parking maneuver** — the Obstacle Challenge run currently stops after the 12th corner rather than returning to the parking box.
-3. **`moverServo()` without `constrain()` in the Obstacle Challenge sketch** — currently safe given the constants in use, but worth hardening to match the Open Challenge sketch.
+1. **No automated final parking maneuver** — the Obstacle Challenge run currently stops after the 12th corner rather than returning to the parking box.
+2. **`moverServo()` without `constrain()` in the Obstacle Challenge sketch** — currently safe given the constants in use, but worth hardening to match the Open Challenge sketch.
